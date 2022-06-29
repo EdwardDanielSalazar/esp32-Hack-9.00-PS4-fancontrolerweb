@@ -1,0 +1,214 @@
+<!DOCTYPE HTML>
+
+<html>
+  <head>
+  
+  
+  <script src="rangeslider.js"></script>
+  <script src="gsap.js"></script>
+  <link rel="stylesheet" type="text/css" href="css.css">
+  <script src="jquery-1.11.3.min.js"></script>
+  <link href="roundslider.min.css" rel="stylesheet" />
+  <script src="roundslider.min.js"></script>
+  <title>ESP Cooler PS4 Web Server</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+ </head>
+  <body>
+    
+
+<h1>ESP32 PS4 Cooler Server</h1>
+  <p>
+    <i class="fas fa-thermometer-half" style="color:#059e8a;">
+    <img src= "temp.png" class= "img"></i> 
+    <span class="dht-labels text_general">Temperatura</span> 
+    <span id="temperature" class="text_general">%TEMPERATURE%</span>
+    <sup class="units text_general"style="color:#861513">&deg;C</sup>
+  </p>
+    
+  <p>
+  <i class="fas fa-plane"  style="color:#00add6;"></i> 
+  <img src= "snow.png" class= "img">
+  <span class="dht-labels text_general">Velocidad Actual</span>
+  <span id="textSliderValue" class="text_general">%SLIDERVALUE%</span>
+  <sup class="units text_general" style="color:#396495">&percnt;</sup>
+  </p> 
+  <p> 
+  <img src= "snow.png" class= "img"> 
+  <span class="dht-labels text_general">Velocidad Actual</span> 
+  <span id="textroundSliderValue" class="text_general">%SLIDERVALUE2%</span>  
+  <sup class="units text_general" style="color:#396495">&percnt;</sup>
+  </p>   
+  <div class="slider"> 
+   <input type="range" onchange="updateSliderPWM(this)" id="pwmSlider" min="0" max="100" value="%SLIDERVALUE%" step="1" class="slider">
+    </p></div>
+  <p>
+  <span class="dht-labels text_general">Velocidad Guardada</span>
+  <span id="guardar" class="text_general">%GUARDAR%</span>
+  <sup class="units text_general"style="color: #396495">&percnt; </sup>
+  </p>
+  <span id="appearance8"style="float: center;color:#FFFFFF;"  onchange="updateSliderPWM2(this)"value="%SLIDERVALUE2%" ></span>
+  <p>
+  <button id="boton" value="%GUARDAR%" class="button2" onmousedown="toggleCheckbox('guardar');" ontouchstart="toggleCheckbox('guardar');">Guardar Velocidad</button>
+  </p>
+  <p>
+  <button id="boton2" value="%TEMPERATURE%" class="button2" onmousedown="solicitarTemp('temperature');" ontouchstart="solicitarTemp('temperature');">TEMPERATURA</button>
+  </p>
+
+  <script type="text/javascript">
+   $("#appearance8").roundSlider("option", "value");
+   var obj = $("#appearance8").data("roundSlider");
+   obj.getValue();
+  // obj.option("value", 50);
+
+  $("#appearance8").roundSlider({
+        radius: 80,
+        width: 22,
+        handleSize: "+0",
+        sliderType: "min-range",
+        value: 0,
+        endAngle: "+354",
+        /////////////actualizaciontiempo real
+        drag: function (event, ui) {
+        var velocityii=this.getValue();
+        console.log(velocityii);
+        document.getElementById("textroundSliderValue").innerHTML = velocityii;
+        
+        },      
+});
+       </script>
+  
+
+  </body>
+  <script type="text/javascript">
+    const $ = (s, o = document) => o.querySelector(s);
+
+var interval;
+
+let slider = $('.slider'),
+    input = $('input', slider),
+    random = (min, max) => min + Math.random() * (max - min),
+    between = (min, max, percent) =>  max - (max - min) * (1 - percent),
+    create = slider => {
+
+        let percent = slider.handle.dataset.percent,
+            position = slider.handle.dataset.position,
+            div = document.createElement('div');
+
+        div.classList.add('smoke');
+        slider.range.appendChild(div);
+
+        gsap.set(div, {
+            x: position,
+            y: -20
+        });
+
+        gsap.timeline().to(div, {
+            scale: random(between(.15, 1, percent), between(.4, 2, percent)),
+            duration: between(.8, 1.2, percent)
+        }).to(div, {
+            scale: 0,
+            duration: between(.3, .5, percent)
+        });
+
+        gsap.to(div, {
+            duration: between(.3, .4, percent),
+            opacity: 1
+        });
+
+        gsap.to(div, {
+            duration: between(2, 3, percent),
+            y: random(between(-40, -200, percent), between(-70, -320, percent)),
+            x: random(between(-20, -90, percent), between(20, 90, percent)) + parseInt(position),
+            onComplete() {
+                div.remove();
+            }
+        });
+
+    };
+
+rangesliderJs.create(input, {
+    onInit(value) {
+        this.handle.dataset.value = value;
+    },
+    onSlideStart(value, percent, position) {
+        this.handle.classList.add('active');
+        interval = setInterval(() => {
+            create(this);
+        }, 50);
+    },
+    onSlide(value, percent, position) {
+        this.handle.dataset.value = value;
+        this.handle.dataset.percent = percent;
+        this.handle.dataset.position = position;
+    },
+    onSlideEnd() {
+        this.handle.classList.remove('active');
+        clearInterval(interval);
+    }
+});
+
+    function toggleCheckbox(x) {
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+    if (this.readyState == 4 && this.status == 200) {
+      document.getElementById("guardar").innerHTML = this.responseText;
+      }
+     };
+     xhttp.open("GET", "/" + x, true);
+     xhttp.send();
+     }
+
+     function solicitarTemp(x) {
+     var xhttp = new XMLHttpRequest();
+      xhttp.onreadystatechange = function() {
+      if (this.readyState == 4 && this.status == 200) {
+      document.getElementById("temperature").innerHTML = this.responseText;
+      }
+     };
+     xhttp.open("GET", "/" + x, true);
+     xhttp.send();
+     }
+     
+   function updateSliderPWM(element) {
+    var sliderValue = document.getElementById("pwmSlider").value;
+    //document.getElementById("textSliderValue").innerHTML = sliderValue;
+    console.log(sliderValue);
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", "/slider?value="+sliderValue, true);
+    xhr.send();
+  }
+  function updateSliderPWM2(element) {
+    var sliderValue2 =obj.getValue();
+    document.getElementById("textroundSliderValue").innerHTML = sliderValue2;
+    console.log(obj.getValue())
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", "/slider2?value="+sliderValue2, true);
+    xhr.send();
+  }
+/////////////actualizaciontiempo real
+  const pwmSlider = document.getElementById("pwmSlider");
+  pwmSlider.addEventListener("input", inputHandler);
+    function inputHandler() {
+    document.getElementById("textSliderValue").innerHTML = pwmSlider.value;
+    console.log(pwmSlider.value);  
+  }
+  
+   //this requests the photo name every 10 seconds. But you can call thejavascript function after cliking on a button, for example.
+
+  setInterval(function ( ) {
+  var xhttp = new XMLHttpRequest();
+  xhttp.onreadystatechange = function() {
+    if (this.readyState == 4 && this.status == 200) {
+      document.getElementById("temperature").innerHTML = this.responseText;
+    }
+  };
+  xhttp.open("GET", "/temperature", true);
+  xhttp.send();
+}, 5000 ) ;
+
+
+
+</script>
+
+
+</html>
